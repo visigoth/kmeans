@@ -20,19 +20,19 @@ limitations under the License.
 #include <thrust/fill.h>
 #include <thrust/iterator/counting_iterator.h>
 
-__device__ double atomicAdd(double* address, double val)
-{
-    unsigned long long int* address_as_ull =
-                             (unsigned long long int*)address;
-    unsigned long long int old = *address_as_ull, assumed;
-    do {
-        assumed = old;
-        old = atomicCAS(address_as_ull, assumed,
-                        __double_as_longlong(val +
-                                             __longlong_as_double(assumed)));
-    } while (assumed != old);
-    return __longlong_as_double(old);
+#if 0
+// types conflict with other atomicAdd implementation
+__device__ double atomicAdd(double *address, double val) {
+  unsigned long long int *address_as_ull = (unsigned long long int *)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+    assumed = old;
+    old = atomicCAS(address_as_ull, assumed,
+                    __double_as_longlong(val + __longlong_as_double(assumed)));
+  } while (assumed != old);
+  return __longlong_as_double(old);
 }
+#endif
 
 namespace kmeans {
 namespace detail {
@@ -45,10 +45,10 @@ void update_centroid(int label, int dimension,
                      int count, int* counts) {
     int index = label * d + dimension;
     T* target = centroids + index;
-    atomicAdd(target, accumulator);
+    ::atomicAdd(target, accumulator);
     if (dimension == 0) {
-        atomicAdd(counts + label, count);
-    }             
+        ::atomicAdd(counts + label, count);
+    }
 }
 
 template<typename T>
